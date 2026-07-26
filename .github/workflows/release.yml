@@ -1,0 +1,29 @@
+# Releases simple-release itself by dogfooding the action.
+#
+# On a `v*.*.*` tag push, this workflow uses the action to:
+#   - create a GitHub release with auto-generated notes
+#   - force-move the matching major-version tag (e.g. v0) to the release commit
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cut release and update major-version tag
+        uses: ./
+        with:
+          release: 'true'
+          major-tag: 'true'

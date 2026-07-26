@@ -1,0 +1,371 @@
+name: Simple Release
+description: >
+  Opinionated but customizable composite action for cutting releases: bump a
+  version file, update a keep-a-changelog CHANGELOG, extract release notes,
+  append a sponsors block, commit the bumped files back, move a rolling
+  devbuild tag, and create a GitHub release. Every step is opt-in.
+author: Giorgio Garofalo
+
+branding:
+  icon: tag
+  color: purple
+
+inputs:
+  # Core
+  tag:
+    description: >
+      Tag name for the release. Defaults to `github.ref_name`. If the ref that
+      triggered the workflow isn't a tag, most steps will still run against this
+      value; make sure to pass a sensible one when calling from a non-tag ref.
+    required: false
+    default: ${{ github.ref_name }}
+
+  token:
+    description: >
+      Token used to create the GitHub releases. Defaults to
+      `${{ github.token }}`.
+    required: false
+    default: ${{ github.token }}
+
+  committer-token:
+    description: >
+      Token used for pushing commits and moving tags. Falls back to `token` if
+      empty. A PAT with `contents: write` on the target repo is usually needed
+      when the workflow itself was triggered by a bot or the default token
+      cannot push to protected branches.
+    required: false
+    default: ''
+
+  # Version file
+  version-file:
+    description: >
+      Path to a file that should be overwritten with the release version (e.g.
+      `version.txt`). Leave empty to skip. The tag's leading `v` is stripped
+      unless `keep-v-prefix` is set to `true`.
+    required: false
+    default: ''
+
+  keep-v-prefix:
+    description: >
+      When `true`, the tag is written to `version-file` verbatim. When `false`
+      (default), the leading `v` is stripped.
+    required: false
+    default: 'false'
+
+  # Changelog
+  changelog-file:
+    description: >
+      Path to a `keep-a-changelog` style changelog file. Leave empty to skip
+      changelog handling entirely.
+    required: false
+    default: ''
+
+  # Release notes extraction
+  extract-release-notes:
+    description: >
+      Whether to extract release notes from the changelog for the current tag.
+      Defaults to `true` when `changelog-file` is set.
+    required: false
+    default: ''
+
+  # Sponsors block appended to release body
+  sponsors-file:
+    description: >
+      Path to a file whose content is appended after the release notes in the
+      release body (e.g. `SPONSORS.md`). Leave empty to skip.
+    required: false
+    default: ''
+
+  # Commit updates back
+  commit:
+    description: >
+      When `true`, commits changes to `version-file` and `changelog-file` back
+      to the repository.
+    required: false
+    default: 'false'
+
+  commit-message:
+    description: Commit message template. `{tag}` is substituted with the tag.
+    required: false
+    default: 'chore: release {tag}'
+
+  commit-user-name:
+    description: Name for the auto-commit author.
+    required: false
+    default: 'github-actions'
+
+  commit-user-email:
+    description: Email for the auto-commit author.
+    required: false
+    default: 'github-actions[bot]@users.noreply.github.com'
+
+  commit-branch:
+    description: >
+      Branch to push the auto-commit to. Defaults to `main`. Only used when
+      `commit` is `true`.
+    required: false
+    default: 'main'
+
+  # Devbuild (rolling prerelease)
+  devbuild-tag:
+    description: >
+      Name of a rolling tag (e.g. `latest`) to move to the current commit and
+      publish as a prerelease. Leave empty to skip devbuild entirely.
+    required: false
+    default: ''
+
+  devbuild-name:
+    description: Display name for the devbuild release.
+    required: false
+    default: 'Development build'
+
+  devbuild-files:
+    description: >
+      Newline- or comma-separated glob patterns of files to attach to the
+      devbuild release. Passed through to `softprops/action-gh-release`.
+    required: false
+    default: ''
+
+  # Final release
+  release:
+    description: >
+      Whether to create the tagged release. `auto` (default) creates the
+      release only when the workflow ref is a tag. Use `true` or `false` to
+      force behavior.
+    required: false
+    default: 'auto'
+
+  release-name:
+    description: Display name for the release. Defaults to the tag.
+    required: false
+    default: ''
+
+  release-body:
+    description: >
+      Literal Markdown body for the release. If empty, the body is composed
+      from the extracted release notes and the sponsors file.
+    required: false
+    default: ''
+
+  release-files:
+    description: >
+      Newline- or comma-separated glob patterns of files to attach to the
+      release. Passed through to `softprops/action-gh-release`.
+    required: false
+    default: ''
+
+  release-draft:
+    description: Whether the release should be created as a draft.
+    required: false
+    default: 'false'
+
+  release-prerelease:
+    description: Whether the release should be marked as a prerelease.
+    required: false
+    default: 'false'
+
+  # Major-version tag alias (typical for reusable GitHub Actions)
+  major-tag:
+    description: >
+      When `true`, extracts the major version from `tag` (e.g. `v2` from
+      `v2.3.4`) and force-pushes it to the current commit. Useful for reusable
+      GitHub Actions that want consumers to pin `@v2`. Fails if the tag isn't
+      semver-like.
+    required: false
+    default: 'false'
+
+outputs:
+  version:
+    description: The computed version string (tag with leading `v` optionally stripped).
+    value: ${{ steps.compute.outputs.version }}
+  is-tag:
+    description: Whether the workflow ref is a tag.
+    value: ${{ steps.compute.outputs.is-tag }}
+  release-notes:
+    description: Extracted release notes for the tag, if the changelog step ran.
+    value: ${{ steps.notes.outputs.release_notes }}
+  release-url:
+    description: URL of the created release, if any.
+    value: ${{ steps.release.outputs.url }}
+  devbuild-url:
+    description: URL of the created devbuild release, if any.
+    value: ${{ steps.devbuild-release.outputs.url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Compute derived values
+      id: compute
+      shell: bash
+      env:
+        INPUT_TAG: ${{ inputs.tag }}
+        INPUT_TOKEN: ${{ inputs.token }}
+        INPUT_COMMITTER_TOKEN: ${{ inputs.committer-token }}
+        INPUT_KEEP_V: ${{ inputs.keep-v-prefix }}
+        INPUT_RELEASE: ${{ inputs.release }}
+        INPUT_EXTRACT: ${{ inputs.extract-release-notes }}
+        INPUT_CHANGELOG: ${{ inputs.changelog-file }}
+        INPUT_COMMIT_MESSAGE: ${{ inputs.commit-message }}
+        REF_TYPE: ${{ github.ref_type }}
+      run: |
+        set -euo pipefail
+        tag="${INPUT_TAG:-}"
+        if [ "${INPUT_KEEP_V}" = "true" ]; then
+          version="$tag"
+        else
+          version="${tag#v}"
+        fi
+        is_tag=false
+        if [ "${REF_TYPE}" = "tag" ]; then is_tag=true; fi
+
+        case "${INPUT_RELEASE}" in
+          true) do_release=true ;;
+          false) do_release=false ;;
+          auto|"") do_release="$is_tag" ;;
+          *) echo "release must be true, false, or auto" >&2; exit 2 ;;
+        esac
+
+        case "${INPUT_EXTRACT}" in
+          true) do_extract=true ;;
+          false) do_extract=false ;;
+          "") if [ -n "${INPUT_CHANGELOG}" ]; then do_extract=true; else do_extract=false; fi ;;
+          *) echo "extract-release-notes must be true, false, or empty" >&2; exit 2 ;;
+        esac
+
+        committer_token="${INPUT_COMMITTER_TOKEN:-$INPUT_TOKEN}"
+        commit_message="${INPUT_COMMIT_MESSAGE//\{tag\}/$tag}"
+
+        {
+          echo "version=$version"
+          echo "is-tag=$is_tag"
+          echo "do-release=$do_release"
+          echo "do-extract=$do_extract"
+          echo "committer-token=$committer_token"
+          echo "commit-message=$commit_message"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Bump version file
+      if: inputs.version-file != ''
+      shell: bash
+      env:
+        VERSION_FILE: ${{ inputs.version-file }}
+        TAG: ${{ inputs.tag }}
+        KEEP_V: ${{ inputs.keep-v-prefix }}
+      run: |
+        set -euo pipefail
+        args=()
+        if [ "$KEEP_V" = "true" ]; then args+=("--keep-v"); fi
+        args+=("$VERSION_FILE" "$TAG")
+        "${GITHUB_ACTION_PATH}/scripts/bump-version.sh" "${args[@]}"
+
+    - name: Update changelog
+      if: inputs.changelog-file != ''
+      uses: thomaseizinger/keep-a-changelog-new-release@v2
+      with:
+        tag: ${{ inputs.tag }}
+        changelogPath: ${{ inputs.changelog-file }}
+
+    - name: Extract release notes
+      id: notes
+      if: steps.compute.outputs.do-extract == 'true'
+      uses: ffurrer2/extract-release-notes@v3
+      with:
+        changelog_file: ${{ inputs.changelog-file }}
+
+    - name: Commit release updates
+      if: inputs.commit == 'true'
+      uses: stefanzweifel/git-auto-commit-action@v7
+      with:
+        commit_message: ${{ steps.compute.outputs.commit-message }}
+        commit_user_name: ${{ inputs.commit-user-name }}
+        commit_user_email: ${{ inputs.commit-user-email }}
+        file_pattern: >-
+          ${{ inputs.version-file }} ${{ inputs.changelog-file }}
+        branch: ${{ inputs.commit-branch }}
+
+    - name: Move devbuild tag
+      if: inputs.devbuild-tag != ''
+      shell: bash
+      env:
+        DEVBUILD_TAG: ${{ inputs.devbuild-tag }}
+        REPO: ${{ github.repository }}
+        SERVER_URL: ${{ github.server_url }}
+        TOKEN: ${{ steps.compute.outputs.committer-token }}
+        COMMIT_USER_NAME: ${{ inputs.commit-user-name }}
+        COMMIT_USER_EMAIL: ${{ inputs.commit-user-email }}
+      run: |
+        set -euo pipefail
+        git config user.name "$COMMIT_USER_NAME"
+        git config user.email "$COMMIT_USER_EMAIL"
+        git tag -d "$DEVBUILD_TAG" || true
+        git tag -f "$DEVBUILD_TAG"
+        push_url="${SERVER_URL#https://}"
+        git push "https://x-access-token:${TOKEN}@${push_url}/${REPO}.git" "+refs/tags/${DEVBUILD_TAG}"
+
+    - name: Create devbuild release
+      id: devbuild-release
+      if: inputs.devbuild-tag != ''
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ inputs.token }}
+        tag_name: ${{ inputs.devbuild-tag }}
+        prerelease: true
+        generate_release_notes: true
+        name: ${{ inputs.devbuild-name }}
+        files: ${{ inputs.devbuild-files }}
+
+    - name: Compose release body
+      id: body
+      if: steps.compute.outputs.do-release == 'true'
+      shell: bash
+      env:
+        RELEASE_BODY: ${{ inputs.release-body }}
+        NOTES: ${{ steps.notes.outputs.release_notes }}
+        SPONSORS_FILE: ${{ inputs.sponsors-file }}
+      run: |
+        set -euo pipefail
+        out="${RUNNER_TEMP}/simple-release-body.md"
+        if [ -n "${RELEASE_BODY}" ]; then
+          printf '%s' "${RELEASE_BODY}" > "$out"
+        else
+          notes_file="${RUNNER_TEMP}/simple-release-notes.md"
+          if [ -n "${NOTES}" ]; then
+            printf '%s' "${NOTES}" > "$notes_file"
+          else
+            : > "$notes_file"
+          fi
+          "${GITHUB_ACTION_PATH}/scripts/compose-body.sh" "$out" "$notes_file" "${SPONSORS_FILE}"
+        fi
+        echo "path=$out" >> "$GITHUB_OUTPUT"
+
+    - name: Create release
+      id: release
+      if: steps.compute.outputs.do-release == 'true'
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ inputs.token }}
+        tag_name: ${{ inputs.tag }}
+        name: ${{ inputs.release-name }}
+        body_path: ${{ steps.body.outputs.path }}
+        files: ${{ inputs.release-files }}
+        draft: ${{ inputs.release-draft }}
+        prerelease: ${{ inputs.release-prerelease }}
+
+    - name: Move major-version tag
+      if: inputs.major-tag == 'true'
+      shell: bash
+      env:
+        TAG: ${{ inputs.tag }}
+        REPO: ${{ github.repository }}
+        SERVER_URL: ${{ github.server_url }}
+        TOKEN: ${{ steps.compute.outputs.committer-token }}
+        COMMIT_USER_NAME: ${{ inputs.commit-user-name }}
+        COMMIT_USER_EMAIL: ${{ inputs.commit-user-email }}
+      run: |
+        set -euo pipefail
+        major="$("${GITHUB_ACTION_PATH}/scripts/major-tag.sh" "$TAG")"
+        git config user.name "$COMMIT_USER_NAME"
+        git config user.email "$COMMIT_USER_EMAIL"
+        git tag -f "$major"
+        push_url="${SERVER_URL#https://}"
+        git push "https://x-access-token:${TOKEN}@${push_url}/${REPO}.git" "+refs/tags/${major}"

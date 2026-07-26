@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  bats:
+    name: bats unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bats-core
+        run: sudo apt-get update && sudo apt-get install -y bats
+
+      - name: Verify bats version
+        run: bats --version
+
+      - name: Run bats tests
+        run: bats tests/
+
+  action-lint:
+    name: action.yml sanity checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate action.yml parses as YAML
+        run: python3 -c "import yaml, pathlib; yaml.safe_load(pathlib.Path('action.yml').read_text())"
+
+      - name: Verify all referenced scripts exist and are executable
+        run: |
+          set -euo pipefail
+          missing=0
+          while IFS= read -r script; do
+            if [ ! -x "$script" ]; then
+              echo "::error file=$script::script missing or not executable"
+              missing=1
+            fi
+          done < <(grep -oE 'scripts/[a-zA-Z0-9_-]+\.sh' action.yml | sort -u)
+          exit "$missing"

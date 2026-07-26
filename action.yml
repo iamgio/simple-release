@@ -2,8 +2,9 @@ name: Simple Release
 description: >
   Opinionated but customizable composite action for cutting releases: bump a
   version file, update a keep-a-changelog CHANGELOG, extract release notes,
-  append a sponsors block, commit the bumped files back, move a rolling
-  devbuild tag, and create a GitHub release. Every step is opt-in.
+  append an extra section to the release body, commit the bumped files back,
+  move a rolling devbuild tag, and create a GitHub release. Every step is
+  opt-in.
 author: Giorgio Garofalo
 
 branding:
@@ -79,11 +80,14 @@ inputs:
     required: false
     default: ''
 
-  # Sponsors block appended to release body
-  sponsors-file:
+  # Extra file appended to the release body (e.g. sponsors, footer, extra
+  # notes) after the extracted release notes.
+  body-append-file:
     description: >
       Path to a file whose content is appended after the release notes in the
-      release body (e.g. `SPONSORS.md`). Leave empty to skip.
+      release body, separated by a blank line (e.g. `SPONSORS.md`, a footer
+      section, extra notes). Leave empty to skip. Ignored when `release-body`
+      is provided literally.
     required: false
     default: ''
 
@@ -166,7 +170,7 @@ inputs:
   release-body:
     description: >
       Literal Markdown body for the release. If empty, the body is composed
-      from the extracted release notes and the sponsors file.
+      from the extracted release notes and the `body-append-file` content.
     required: false
     default: ''
 
@@ -358,7 +362,7 @@ runs:
       env:
         RELEASE_BODY: ${{ inputs.release-body }}
         NOTES: ${{ steps.notes.outputs.release_notes }}
-        SPONSORS_FILE: ${{ inputs.sponsors-file }}
+        APPEND_FILE: ${{ inputs.body-append-file }}
         INSERT_SPACERS: ${{ inputs.insert-changelog-spacers }}
       run: |
         set -euo pipefail
@@ -377,7 +381,7 @@ runs:
             "${GITHUB_ACTION_PATH}/scripts/insert-changelog-spacers.sh" "$notes_file" "$spaced_file"
             mv "$spaced_file" "$notes_file"
           fi
-          "${GITHUB_ACTION_PATH}/scripts/compose-body.sh" "$out" "$notes_file" "${SPONSORS_FILE}"
+          "${GITHUB_ACTION_PATH}/scripts/compose-body.sh" "$out" "$notes_file" "${APPEND_FILE}"
         fi
         echo "path=$out" >> "$GITHUB_OUTPUT"
 

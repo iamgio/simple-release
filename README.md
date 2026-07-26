@@ -20,8 +20,9 @@ Each step is opt-in via its input. Nothing runs unless you ask for it.
 - **Release notes extraction** — extracts the notes for the current tag from
   the changelog via
   [`ffurrer2/extract-release-notes`](https://github.com/ffurrer2/extract-release-notes).
-- **Sponsors block** — appends the content of a file (e.g. `SPONSORS.md`) to
-  the release body.
+- **Extra body section** — appends the content of an arbitrary file (e.g.
+  `SPONSORS.md`, a footer, extra notes) to the release body after the release
+  notes.
 - **Commit-back** — commits the bumped `version-file` and `changelog-file` back
   to a branch using
   [`stefanzweifel/git-auto-commit-action`](https://github.com/stefanzweifel/git-auto-commit-action).
@@ -60,7 +61,7 @@ jobs:
         with:
           version-file: version.txt
           changelog-file: CHANGELOG.md
-          sponsors-file: SPONSORS.md
+          body-append-file: SPONSORS.md
           commit: 'true'
           release-files: |
             build/dist/*.zip
@@ -139,11 +140,11 @@ Consumers pinning `@v2` will get the update automatically.
 | `update-changelog`      | `true`                                      | Turn `[Unreleased]` into a dated release section. Set to `false` when calling the action twice in the same job and the update already happened. |
 | `extract-release-notes` | auto (`true` when changelog set and releasing) | Extract release notes for the tag from the changelog. Explicit `true`/`false` overrides.                                                    |
 
-### Sponsors
+### Extra body section
 
-| Input           | Default | Description                                                                          |
-|-----------------|---------|--------------------------------------------------------------------------------------|
-| `sponsors-file` | `''`    | If set and existing, appended after release notes in the release body.               |
+| Input              | Default | Description                                                                                                                             |
+|--------------------|---------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| `body-append-file` | `''`    | If set and the file exists, its content is appended after the release notes in the release body, separated by a blank line (e.g. `SPONSORS.md`, a footer, extra notes). Ignored when `release-body` is passed literally. |
 
 ### Release-notes spacers
 
@@ -175,7 +176,7 @@ Consumers pinning `@v2` will get the update automatically.
 |----------------------|-------------------------------|------------------------------------------------------------------------------------------------|
 | `release`            | `auto`                        | `auto` = create when ref is a tag. Use `true`/`false` to force behavior.                       |
 | `release-name`       | `''` (tag)                    | Release display name.                                                                          |
-| `release-body`       | composed                      | Literal Markdown body. If empty, composed from release notes and sponsors.                     |
+| `release-body`       | composed                      | Literal Markdown body. If empty, composed from release notes and the append file.              |
 | `release-files`      | `''`                          | Newline- or comma-separated glob patterns of files to attach.                                  |
 | `release-draft`      | `false`                       |                                                                                                |
 | `release-prerelease` | `false`                       |                                                                                                |

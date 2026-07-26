@@ -87,7 +87,7 @@ inputs:
     required: false
     default: ''
 
-  insert-spacers:
+  insert-changelog-spacers:
     description: >
       When `true`, inserts a `&nbsp;` spacer line before every `###` and
       `####` heading in the extracted release notes, except the very first
@@ -359,7 +359,7 @@ runs:
         RELEASE_BODY: ${{ inputs.release-body }}
         NOTES: ${{ steps.notes.outputs.release_notes }}
         SPONSORS_FILE: ${{ inputs.sponsors-file }}
-        INSERT_SPACERS: ${{ inputs.insert-spacers }}
+        INSERT_SPACERS: ${{ inputs.insert-changelog-spacers }}
       run: |
         set -euo pipefail
         out="${RUNNER_TEMP}/simple-release-body.md"
@@ -374,7 +374,7 @@ runs:
           fi
           if [ "${INSERT_SPACERS}" = "true" ]; then
             spaced_file="${RUNNER_TEMP}/simple-release-notes-spaced.md"
-            "${GITHUB_ACTION_PATH}/scripts/insert-spacers.sh" "$notes_file" "$spaced_file"
+            "${GITHUB_ACTION_PATH}/scripts/insert-changelog-spacers.sh" "$notes_file" "$spaced_file"
             mv "$spaced_file" "$notes_file"
           fi
           "${GITHUB_ACTION_PATH}/scripts/compose-body.sh" "$out" "$notes_file" "${SPONSORS_FILE}"

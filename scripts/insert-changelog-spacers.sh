@@ -3,7 +3,7 @@
 # renders extra vertical spacing between changelog subsections in the release
 # notes without the source markdown having to carry them.
 #
-# Usage: insert-spacers.sh <input-file> <output-file>
+# Usage: insert-changelog-spacers.sh <input-file> <output-file>
 #
 # - A spacer is inserted *before* every `###`/`####` heading except the very
 #   first one, so the release notes never start with a stray `&nbsp;` line.
@@ -17,12 +17,12 @@ input="${1:-}"
 output="${2:-}"
 
 if [ -z "$input" ] || [ -z "$output" ]; then
-    echo "insert-spacers.sh: usage: insert-spacers.sh <input-file> <output-file>" >&2
+    echo "insert-changelog-spacers.sh: usage: insert-changelog-spacers.sh <input-file> <output-file>" >&2
     exit 2
 fi
 
 if [ ! -f "$input" ]; then
-    echo "insert-spacers.sh: input file '$input' does not exist" >&2
+    echo "insert-changelog-spacers.sh: input file '$input' does not exist" >&2
     exit 2
 fi
 

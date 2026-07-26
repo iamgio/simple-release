@@ -14,7 +14,7 @@ teardown() {
 run_insert() {
     local input="$1"
     local output="$2"
-    "$SCRIPTS_DIR/insert-spacers.sh" "$input" "$output"
+    "$SCRIPTS_DIR/insert-changelog-spacers.sh" "$input" "$output"
 }
 
 @test "does not insert a spacer before the very first heading" {
@@ -82,11 +82,11 @@ run_insert() {
 }
 
 @test "fails when input file is missing" {
-    run "$SCRIPTS_DIR/insert-spacers.sh" "$TMP_WORKSPACE/missing.md" "$TMP_WORKSPACE/out.md"
+    run "$SCRIPTS_DIR/insert-changelog-spacers.sh" "$TMP_WORKSPACE/missing.md" "$TMP_WORKSPACE/out.md"
     [ "$status" -ne 0 ]
 }
 
 @test "fails when args are missing" {
-    run "$SCRIPTS_DIR/insert-spacers.sh"
+    run "$SCRIPTS_DIR/insert-changelog-spacers.sh"
     [ "$status" -ne 0 ]
 }

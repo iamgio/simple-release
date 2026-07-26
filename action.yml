@@ -61,11 +61,21 @@ inputs:
     required: false
     default: ''
 
+  update-changelog:
+    description: >
+      Whether to turn the changelog's `[Unreleased]` section into a dated
+      release section. Defaults to `true` when `changelog-file` is set. Set to
+      `false` when calling the action a second time in the same job and the
+      changelog was already updated in an earlier call.
+    required: false
+    default: 'true'
+
   # Release notes extraction
   extract-release-notes:
     description: >
       Whether to extract release notes from the changelog for the current tag.
-      Defaults to `true` when `changelog-file` is set.
+      Defaults to `true` when `changelog-file` is set and a release will be
+      created (see `release`). Explicit `true`/`false` overrides.
     required: false
     default: ''
 
@@ -236,7 +246,13 @@ runs:
         case "${INPUT_EXTRACT}" in
           true) do_extract=true ;;
           false) do_extract=false ;;
-          "") if [ -n "${INPUT_CHANGELOG}" ]; then do_extract=true; else do_extract=false; fi ;;
+          "")
+            if [ -n "${INPUT_CHANGELOG}" ] && [ "$do_release" = "true" ]; then
+              do_extract=true
+            else
+              do_extract=false
+            fi
+            ;;
           *) echo "extract-release-notes must be true, false, or empty" >&2; exit 2 ;;
         esac
 
@@ -268,7 +284,7 @@ runs:
         "${GITHUB_ACTION_PATH}/scripts/bump-version.sh" "${args[@]}"
 
     - name: Update changelog
-      if: inputs.changelog-file != ''
+      if: inputs.changelog-file != '' && inputs.update-changelog != 'false'
       uses: thomaseizinger/keep-a-changelog-new-release@v2
       with:
         tag: ${{ steps.compute.outputs.tag }}

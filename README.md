@@ -133,10 +133,11 @@ Consumers pinning `@v2` will get the update automatically.
 
 ### Changelog (opt-in via `changelog-file`)
 
-| Input                   | Default             | Description                                                                                            |
-|-------------------------|---------------------|--------------------------------------------------------------------------------------------------------|
-| `changelog-file`        | `''`                | Path to a keep-a-changelog file. Leave empty to skip.                                                  |
-| `extract-release-notes` | auto (`true` if changelog set) | Extract release notes for the tag from the changelog. Explicit `true`/`false` overrides. |
+| Input                   | Default                                     | Description                                                                                                                                     |
+|-------------------------|---------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| `changelog-file`        | `''`                                        | Path to a keep-a-changelog file. Leave empty to skip.                                                                                           |
+| `update-changelog`      | `true`                                      | Turn `[Unreleased]` into a dated release section. Set to `false` when calling the action twice in the same job and the update already happened. |
+| `extract-release-notes` | auto (`true` when changelog set and releasing) | Extract release notes for the tag from the changelog. Explicit `true`/`false` overrides.                                                    |
 
 ### Sponsors
 

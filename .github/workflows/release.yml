@@ -1,11 +1,4 @@
 # Releases simple-release itself by dogfooding the action.
-#
-# On a `v*.*.*` tag push, this workflow uses the action to:
-#   - roll the `[Unreleased]` section of CHANGELOG.md into a dated release section
-#   - insert `&nbsp;` spacers into the extracted release notes
-#   - publish a GitHub release whose body is those notes
-#   - commit the updated CHANGELOG.md back to main
-#   - force-move the matching major-version tag (e.g. `v1`) to the release commit
 
 name: Release
 

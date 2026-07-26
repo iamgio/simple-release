@@ -20,7 +20,7 @@ Opinionated, customizable GitHub Action to publish releases out of pushed `v*` t
 * *Devbuild prerelease:* moves a rolling tag to the
   current commit and publishes a prerelease with attached artifacts as a nightly build.
 * *Major-version tag alias:* extracts and pushes the
-  major from the tag (`v2.3.4` -> `v2`). Ideal for pinning versions in GitHub Actions (dogfooded in
+  major from the tag (`v2.3.4` -> `v2`), ideal for pinning versions in GitHub Actions (dogfooded in
 link:.github/workflows/release.yml[this very action]).
 
 == Quick start

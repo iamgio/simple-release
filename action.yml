@@ -14,18 +14,19 @@ inputs:
   # Core
   tag:
     description: >
-      Tag name for the release. Defaults to `github.ref_name`. If the ref that
-      triggered the workflow isn't a tag, most steps will still run against this
-      value; make sure to pass a sensible one when calling from a non-tag ref.
+      Tag name for the release. When empty, falls back to `github.ref_name`.
+      If the ref that triggered the workflow isn't a tag, most steps will
+      still run against this value; make sure to pass a sensible one when
+      calling from a non-tag ref.
     required: false
-    default: ${{ github.ref_name }}
+    default: ''
 
   token:
     description: >
-      Token used to create the GitHub releases. Defaults to
-      `${{ github.token }}`.
+      Token used to create the GitHub releases. When empty, falls back to
+      `github.token`.
     required: false
-    default: ${{ github.token }}
+    default: ''
 
   committer-token:
     description: >
@@ -206,10 +207,17 @@ runs:
         INPUT_EXTRACT: ${{ inputs.extract-release-notes }}
         INPUT_CHANGELOG: ${{ inputs.changelog-file }}
         INPUT_COMMIT_MESSAGE: ${{ inputs.commit-message }}
+        REF_NAME: ${{ github.ref_name }}
         REF_TYPE: ${{ github.ref_type }}
+        DEFAULT_TOKEN: ${{ github.token }}
       run: |
         set -euo pipefail
-        tag="${INPUT_TAG:-}"
+        # Resolve effective tag and tokens; composite input defaults can't
+        # reference `github.*` contexts, so we resolve them here instead.
+        tag="${INPUT_TAG:-$REF_NAME}"
+        token="${INPUT_TOKEN:-$DEFAULT_TOKEN}"
+        committer_token="${INPUT_COMMITTER_TOKEN:-$token}"
+
         if [ "${INPUT_KEEP_V}" = "true" ]; then
           version="$tag"
         else
@@ -232,10 +240,11 @@ runs:
           *) echo "extract-release-notes must be true, false, or empty" >&2; exit 2 ;;
         esac
 
-        committer_token="${INPUT_COMMITTER_TOKEN:-$INPUT_TOKEN}"
         commit_message="${INPUT_COMMIT_MESSAGE//\{tag\}/$tag}"
 
         {
+          echo "tag=$tag"
+          echo "token=$token"
           echo "version=$version"
           echo "is-tag=$is_tag"
           echo "do-release=$do_release"
@@ -249,7 +258,7 @@ runs:
       shell: bash
       env:
         VERSION_FILE: ${{ inputs.version-file }}
-        TAG: ${{ inputs.tag }}
+        TAG: ${{ steps.compute.outputs.tag }}
         KEEP_V: ${{ inputs.keep-v-prefix }}
       run: |
         set -euo pipefail
@@ -262,7 +271,7 @@ runs:
       if: inputs.changelog-file != ''
       uses: thomaseizinger/keep-a-changelog-new-release@v2
       with:
-        tag: ${{ inputs.tag }}
+        tag: ${{ steps.compute.outputs.tag }}
         changelogPath: ${{ inputs.changelog-file }}
 
     - name: Extract release notes
@@ -307,7 +316,7 @@ runs:
       if: inputs.devbuild-tag != ''
       uses: softprops/action-gh-release@v2
       with:
-        token: ${{ inputs.token }}
+        token: ${{ steps.compute.outputs.token }}
         tag_name: ${{ inputs.devbuild-tag }}
         prerelease: true
         generate_release_notes: true
@@ -343,8 +352,8 @@ runs:
       if: steps.compute.outputs.do-release == 'true'
       uses: softprops/action-gh-release@v2
       with:
-        token: ${{ inputs.token }}
-        tag_name: ${{ inputs.tag }}
+        token: ${{ steps.compute.outputs.token }}
+        tag_name: ${{ steps.compute.outputs.tag }}
         name: ${{ inputs.release-name }}
         body_path: ${{ steps.body.outputs.path }}
         files: ${{ inputs.release-files }}
@@ -355,7 +364,7 @@ runs:
       if: inputs.major-tag == 'true'
       shell: bash
       env:
-        TAG: ${{ inputs.tag }}
+        TAG: ${{ steps.compute.outputs.tag }}
         REPO: ${{ github.repository }}
         SERVER_URL: ${{ github.server_url }}
         TOKEN: ${{ steps.compute.outputs.committer-token }}

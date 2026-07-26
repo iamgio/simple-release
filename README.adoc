@@ -2,9 +2,11 @@
 
 Opinionated, customizable GitHub Action to publish releases out of pushed `v*` tags.
 
+> This is a generalization that collects patterns from the workflows used in https://github.com/iamgio/quarkdown[Quarkdown] and other personal projects.
+
 == What it does
 
-NOTE: Each feature is opt-in.
+> Each feature is opt-in.
 
 * *Tagged release:* publishes the release with a composed body and artifacts.
 * *Version-file bump:* writes the tag into

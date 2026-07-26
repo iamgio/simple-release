@@ -1,10 +1,5 @@
 name: Simple Release
-description: >
-  Opinionated but customizable composite action for cutting releases: bump a
-  version file, update a keep-a-changelog CHANGELOG, extract release notes,
-  append an extra section to the release body, commit the bumped files back,
-  move a rolling devbuild tag, and create a GitHub release. Every step is
-  opt-in.
+description: Opinionated, customizable GitHub Action to publish releases out of pushed v* tags.
 author: Giorgio Garofalo
 
 branding:

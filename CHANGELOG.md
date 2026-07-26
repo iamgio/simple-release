@@ -1,16 +1,12 @@
 # Changelog
 
-All notable changes to this project are documented in this file.
-
-The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
 ## [Unreleased]
 
 ### Added
 
-#### Project changelog
+#### Marketplace readiness
 
-Introduced this `CHANGELOG.md` and wired it up in the release workflow, so every future release publishes notes composed from the corresponding section.
+The action is now ready for the GitHub Marketplace.
 
 ## [1.0.0] - 2026-07-26
 

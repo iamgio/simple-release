@@ -147,9 +147,9 @@ Consumers pinning `@v2` will get the update automatically.
 
 ### Release-notes spacers
 
-| Input            | Default | Description                                                                                                                                                                                     |
-|------------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `insert-spacers` | `false` | When `true`, inserts `&nbsp;` spacer lines before every `###` and `####` heading in the extracted release notes (dedups existing spacers first). Skipped when `release-body` is passed literally. |
+| Input            | Default | Description                                                                                                                                                                                                                                                 |
+|------------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `insert-spacers` | `false` | When `true`, inserts a `&nbsp;` spacer line before every `###` and `####` heading in the extracted release notes (except the very first heading, so the notes never start with a stray spacer). Only touches the composed body; the pushed changelog file is never rewritten. Skipped when `release-body` is passed literally. |
 
 ### Commit back (opt-in via `commit`)
 

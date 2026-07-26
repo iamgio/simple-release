@@ -89,11 +89,13 @@ inputs:
 
   insert-spacers:
     description: >
-      When `true`, inserts `&nbsp;` spacer lines before every `###` and `####`
-      heading in the extracted release notes (dedups existing spacers first).
-      Useful when the source changelog is written without manual spacers but
-      the release notes should carry them for GitHub's rendering. Only affects
-      the composed body; ignored when `release-body` is provided literally.
+      When `true`, inserts a `&nbsp;` spacer line before every `###` and
+      `####` heading in the extracted release notes, except the very first
+      heading (so the notes never start with a stray spacer). Useful when the
+      source changelog is written without manual spacers but the release notes
+      should carry them for GitHub's rendering. Only touches the composed
+      body; the pushed changelog file is never rewritten. Ignored when
+      `release-body` is provided literally.
     required: false
     default: 'false'
 

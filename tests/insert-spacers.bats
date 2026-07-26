@@ -17,38 +17,31 @@ run_insert() {
     "$SCRIPTS_DIR/insert-spacers.sh" "$input" "$output"
 }
 
-@test "inserts spacer before a ### heading at start of file" {
+@test "does not insert a spacer before the very first heading" {
     printf '### Added\n\ncontent\n' > "$TMP_WORKSPACE/in.md"
     run_insert "$TMP_WORKSPACE/in.md" "$TMP_WORKSPACE/out.md"
-    expected=$'&nbsp;\n\n### Added\n\ncontent'
+    expected=$'### Added\n\ncontent'
     [ "$(cat "$TMP_WORKSPACE/out.md")" = "$expected" ]
 }
 
-@test "inserts spacer before a #### heading in the middle" {
-    printf 'intro\n\n#### Foo\n\ncontent\n' > "$TMP_WORKSPACE/in.md"
+@test "inserts spacer before subsequent #### headings" {
+    printf '#### Foo\n\ntext\n\n#### Bar\n\nmore\n' > "$TMP_WORKSPACE/in.md"
     run_insert "$TMP_WORKSPACE/in.md" "$TMP_WORKSPACE/out.md"
-    expected=$'intro\n\n&nbsp;\n\n#### Foo\n\ncontent'
+    expected=$'#### Foo\n\ntext\n\n&nbsp;\n\n#### Bar\n\nmore'
     [ "$(cat "$TMP_WORKSPACE/out.md")" = "$expected" ]
 }
 
-@test "inserts spacer before consecutive headings" {
+@test "inserts spacer between every heading past the first" {
     printf '### Added\n\n#### Foo\n\ntext\n\n### Fixed\n\n#### Bar\n\nmore\n' > "$TMP_WORKSPACE/in.md"
     run_insert "$TMP_WORKSPACE/in.md" "$TMP_WORKSPACE/out.md"
-    expected=$'&nbsp;\n\n### Added\n\n&nbsp;\n\n#### Foo\n\ntext\n\n&nbsp;\n\n### Fixed\n\n&nbsp;\n\n#### Bar\n\nmore'
-    [ "$(cat "$TMP_WORKSPACE/out.md")" = "$expected" ]
-}
-
-@test "removes existing &nbsp; spacer and does not duplicate" {
-    printf '### Added\n\n&nbsp;\n\n#### Foo\n\ntext\n' > "$TMP_WORKSPACE/in.md"
-    run_insert "$TMP_WORKSPACE/in.md" "$TMP_WORKSPACE/out.md"
-    expected=$'&nbsp;\n\n### Added\n\n&nbsp;\n\n#### Foo\n\ntext'
+    expected=$'### Added\n\n&nbsp;\n\n#### Foo\n\ntext\n\n&nbsp;\n\n### Fixed\n\n&nbsp;\n\n#### Bar\n\nmore'
     [ "$(cat "$TMP_WORKSPACE/out.md")" = "$expected" ]
 }
 
 @test "does not insert spacer before headings inside a fenced code block" {
     printf '### Real heading\n\n```\n### not a heading\n#### also not\n```\n\n#### Another real one\n' > "$TMP_WORKSPACE/in.md"
     run_insert "$TMP_WORKSPACE/in.md" "$TMP_WORKSPACE/out.md"
-    expected=$'&nbsp;\n\n### Real heading\n\n```\n### not a heading\n#### also not\n```\n\n&nbsp;\n\n#### Another real one'
+    expected=$'### Real heading\n\n```\n### not a heading\n#### also not\n```\n\n&nbsp;\n\n#### Another real one'
     [ "$(cat "$TMP_WORKSPACE/out.md")" = "$expected" ]
 }
 
@@ -63,7 +56,7 @@ run_insert() {
     input=$'### Added\n\nSome paragraph with `code` and [links](https://example.com).\n\n- bullet 1\n- bullet 2\n\n> quoted text\n'
     printf '%s' "$input" > "$TMP_WORKSPACE/in.md"
     run_insert "$TMP_WORKSPACE/in.md" "$TMP_WORKSPACE/out.md"
-    expected=$'&nbsp;\n\n### Added\n\nSome paragraph with `code` and [links](https://example.com).\n\n- bullet 1\n- bullet 2\n\n> quoted text'
+    expected=$'### Added\n\nSome paragraph with `code` and [links](https://example.com).\n\n- bullet 1\n- bullet 2\n\n> quoted text'
     [ "$(cat "$TMP_WORKSPACE/out.md")" = "$expected" ]
 }
 
@@ -74,17 +67,17 @@ run_insert() {
     [ ! -s "$TMP_WORKSPACE/out.md" ]
 }
 
-@test "handles heading with no blank line before it" {
+@test "ensures a blank line before the first heading when preceded by text" {
     printf 'text\n#### Foo\n\nmore\n' > "$TMP_WORKSPACE/in.md"
     run_insert "$TMP_WORKSPACE/in.md" "$TMP_WORKSPACE/out.md"
-    expected=$'text\n\n&nbsp;\n\n#### Foo\n\nmore'
+    expected=$'text\n\n#### Foo\n\nmore'
     [ "$(cat "$TMP_WORKSPACE/out.md")" = "$expected" ]
 }
 
-@test "removes existing spacer even when followed by another heading immediately" {
-    printf '&nbsp;\n\n### Added\n' > "$TMP_WORKSPACE/in.md"
+@test "passes pre-existing spacer lines through unchanged" {
+    printf '### Added\n\n&nbsp;\n\n#### Foo\n' > "$TMP_WORKSPACE/in.md"
     run_insert "$TMP_WORKSPACE/in.md" "$TMP_WORKSPACE/out.md"
-    expected=$'&nbsp;\n\n### Added'
+    expected=$'### Added\n\n&nbsp;\n\n&nbsp;\n\n#### Foo'
     [ "$(cat "$TMP_WORKSPACE/out.md")" = "$expected" ]
 }
 

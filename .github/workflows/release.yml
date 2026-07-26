@@ -1,8 +1,11 @@
 # Releases simple-release itself by dogfooding the action.
 #
 # On a `v*.*.*` tag push, this workflow uses the action to:
-#   - create a GitHub release with auto-generated notes
-#   - force-move the matching major-version tag (e.g. v0) to the release commit
+#   - roll the `[Unreleased]` section of CHANGELOG.md into a dated release section
+#   - insert `&nbsp;` spacers into the extracted release notes
+#   - publish a GitHub release whose body is those notes
+#   - commit the updated CHANGELOG.md back to main
+#   - force-move the matching major-version tag (e.g. `v1`) to the release commit
 
 name: Release
 
@@ -27,3 +30,6 @@ jobs:
         with:
           release: 'true'
           major-tag: 'true'
+          changelog-file: CHANGELOG.md
+          insert-changelog-spacers: 'true'
+          commit: 'true'

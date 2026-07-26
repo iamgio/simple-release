@@ -145,6 +145,12 @@ Consumers pinning `@v2` will get the update automatically.
 |-----------------|---------|--------------------------------------------------------------------------------------|
 | `sponsors-file` | `''`    | If set and existing, appended after release notes in the release body.               |
 
+### Release-notes spacers
+
+| Input            | Default | Description                                                                                                                                                                                     |
+|------------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `insert-spacers` | `false` | When `true`, inserts `&nbsp;` spacer lines before every `###` and `####` heading in the extracted release notes (dedups existing spacers first). Skipped when `release-body` is passed literally. |
+
 ### Commit back (opt-in via `commit`)
 
 | Input               | Default                                              | Description                                                                                    |

@@ -2,7 +2,7 @@
 
 Opinionated, customizable GitHub Action to publish releases out of pushed `v*` tags.
 
-> This is a generalization that collects patterns from the workflows used in https://github.com/iamgio/quarkdown[Quarkdown] and other personal projects.
+> This is a generalization that collects patterns from the workflows used in https://github.com/iamgio/quarkdown[Quarkdown] and other personal projects from my past decade in OSS.
 
 == What it does
 
@@ -15,13 +15,11 @@ Opinionated, customizable GitHub Action to publish releases out of pushed `v*` t
   https://keepachangelog.com/[keep-a-changelog] file, turns it into a dated release
   section, and uses it to compose the release body.
 * *Release notes extraction:* extracts the notes for the current tag from
-  the changelog via
-  https://github.com/ffurrer2/extract-release-notes[`ffurrer2/extract-release-notes`].
+  the changelog.
 * *Devbuild prerelease:* moves a rolling tag to the
   current commit and publishes a prerelease with attached artifacts as a nightly build.
 * *Major-version tag alias:* extracts and pushes the
-  major from the tag (`v2.3.4` -> `v2`), ideal for pinning versions in GitHub Actions (dogfooded in
-link:.github/workflows/release.yml[this very action]).
+  major from the tag (`v2.3.4` -> `v2`), ideal for pinning versions in GitHub Actions (link:.github/workflows/release.yml[dogfooded in this very action]).
 
 == Quick start
 

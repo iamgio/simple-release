@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Devbuild release body no longer accumulates over time
+
 ## [1.0.1] - 2026-07-26
 
 ### Added

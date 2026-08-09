@@ -2,15 +2,17 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-09
+
 ### Added
 
-- The `auto-detect-prerelease` option marks a release as a prerelease when the tag's semver pre-release segment (e.g. `alpha`, `beta`, `rc`) matches the configurable `prerelease-keywords`.
+-   The `auto-detect-prerelease` option marks a release as a prerelease when the tag's semver pre-release segment (e.g. `alpha`, `beta`, `rc`) matches the configurable `prerelease-keywords`.
 
 ## [1.0.2] - 2026-07-27
 
 ### Fixed
 
-- Devbuild release body no longer accumulates over time
+-   Devbuild release body no longer accumulates over time
 
 ## [1.0.1] - 2026-07-26
 
@@ -24,7 +26,9 @@ The action is now ready for the GitHub Marketplace.
 
 Initial stable release. See the [README](README.adoc) for the full feature list.
 
-[Unreleased]: https://github.com/iamgio/simple-release/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/iamgio/simple-release/compare/v1.1.0...HEAD
+
+[1.1.0]: https://github.com/iamgio/simple-release/compare/v1.0.2...v1.1.0
 
 [1.0.2]: https://github.com/iamgio/simple-release/compare/v1.0.1...v1.0.2
 

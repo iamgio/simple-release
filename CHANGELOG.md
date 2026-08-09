@@ -2,11 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+
+- The `auto-detect-prerelease` option marks a release as a prerelease when the tag's semver pre-release segment (e.g. `alpha`, `beta`, `rc`) matches the configurable `prerelease-keywords`.
+
 ## [1.0.2] - 2026-07-27
 
 ### Fixed
 
--   Devbuild release body no longer accumulates over time
+- Devbuild release body no longer accumulates over time
 
 ## [1.0.1] - 2026-07-26
 

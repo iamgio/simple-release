@@ -185,7 +185,9 @@ jobs:
 | `release-body` | Composed | Literal Markdown body. If empty, composed from release notes and the append file.
 | `release-files` | `''` | Newline- or comma-separated glob patterns of files to attach.
 | `release-draft` | `false` | Whether the release should be created as a draft.
-| `release-prerelease` | `false` | Whether the release should be marked as a prerelease.
+| `release-prerelease` | `false` | Whether the release should be marked as a prerelease. Ignored when `auto-detect-prerelease` is `true`.
+| `auto-detect-prerelease` | `false` | When `true`, derive the prerelease flag from the tag: the release is marked as a prerelease when the tag's semver pre-release segment (parsed by https://github.com/madhead/semver-utils[`madhead/semver-utils`], e.g. `rc.1` in `v1.2.3-rc.1`) matches any `prerelease-keywords`. Fully overrides `release-prerelease`.
+| `prerelease-keywords` | `alpha,beta,rc,pre,preview,snapshot,nightly,dev` | Comma-separated, case-insensitive keywords matched as substrings against the tag's pre-release segment. Only used when `auto-detect-prerelease` is `true`.
 |===
 
 === Major-version tag alias
@@ -227,4 +229,5 @@ This action wraps several great community actions:
 * https://github.com/thomaseizinger/keep-a-changelog-new-release[`thomaseizinger/keep-a-changelog-new-release`]
 * https://github.com/ffurrer2/extract-release-notes[`ffurrer2/extract-release-notes`]
 * https://github.com/stefanzweifel/git-auto-commit-action[`stefanzweifel/git-auto-commit-action`]
+* https://github.com/madhead/semver-utils[`madhead/semver-utils`]
 * https://github.com/softprops/action-gh-release[`softprops/action-gh-release`]

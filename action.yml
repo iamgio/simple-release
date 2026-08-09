@@ -182,9 +182,29 @@ inputs:
     default: 'false'
 
   release-prerelease:
-    description: Whether the release should be marked as a prerelease.
+    description: >
+      Whether the release should be marked as a prerelease. Ignored when
+      `auto-detect-prerelease` is `true` (the flag is then derived from the
+      tag instead).
     required: false
     default: 'false'
+
+  auto-detect-prerelease:
+    description: >
+      When `true`, the release's prerelease flag is derived from the tag: the
+      release is marked as a prerelease if the tag contains any of
+      `prerelease-keywords` (e.g. `v1.2.3-rc.1`, `v1.2.3-beta`). This fully
+      overrides `release-prerelease`.
+    required: false
+    default: 'false'
+
+  prerelease-keywords:
+    description: >
+      Comma-separated list of case-insensitive keywords that mark a tag as a
+      prerelease. Matched as plain substrings against the tag. Only used when
+      `auto-detect-prerelease` is `true`.
+    required: false
+    default: 'alpha,beta,rc,pre,preview,snapshot,nightly,dev'
 
   # Major-version tag alias (typical for reusable GitHub Actions)
   major-tag:
@@ -380,6 +400,35 @@ runs:
         fi
         echo "path=$out" >> "$GITHUB_OUTPUT"
 
+    - name: Parse semver for prerelease detection
+      id: semver
+      if: steps.compute.outputs.do-release == 'true' && inputs.auto-detect-prerelease == 'true'
+      uses: madhead/semver-utils@v5
+      with:
+        version: ${{ steps.compute.outputs.tag }}
+        lenient: true
+
+    - name: Resolve prerelease flag
+      id: prerelease
+      if: steps.compute.outputs.do-release == 'true'
+      shell: bash
+      env:
+        AUTO_DETECT: ${{ inputs.auto-detect-prerelease }}
+        RELEASE_PRERELEASE: ${{ inputs.release-prerelease }}
+        PRERELEASE_SEGMENT: ${{ steps.semver.outputs.prerelease }}
+        KEYWORDS: ${{ inputs.prerelease-keywords }}
+      run: |
+        set -euo pipefail
+        # When auto-detect is on, derive the flag from the tag's semver
+        # prerelease segment (extracted by madhead/semver-utils) and fully
+        # override release-prerelease; otherwise pass release-prerelease through.
+        if [ "${AUTO_DETECT}" = "true" ]; then
+          flag="$("${GITHUB_ACTION_PATH}/scripts/detect-prerelease.sh" "${PRERELEASE_SEGMENT}" "${KEYWORDS}")"
+        else
+          flag="${RELEASE_PRERELEASE}"
+        fi
+        echo "flag=$flag" >> "$GITHUB_OUTPUT"
+
     - name: Create release
       id: release
       if: steps.compute.outputs.do-release == 'true'
@@ -391,7 +440,7 @@ runs:
         body_path: ${{ steps.body.outputs.path }}
         files: ${{ inputs.release-files }}
         draft: ${{ inputs.release-draft }}
-        prerelease: ${{ inputs.release-prerelease }}
+        prerelease: ${{ steps.prerelease.outputs.flag }}
 
     - name: Move major-version tag
       if: inputs.major-tag == 'true'

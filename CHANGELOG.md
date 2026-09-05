@@ -5,6 +5,7 @@
 ### Added
 
 - The `auto-detect-prerelease` option marks a release as a prerelease when the tag's semver pre-release segment (e.g. `alpha`, `beta`, `rc`) matches the configurable `prerelease-keywords`.
+- The `bump-package-json` option sets the `version` field of the root `package.json` to the release version, for npm-shaped projects that cannot use `version-file`. Only the version is rewritten, so the release commit touches a single line.
 
 ## [1.0.2] - 2026-07-27
 

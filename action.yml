@@ -45,7 +45,20 @@ inputs:
   keep-v-prefix:
     description: >
       When `true`, the tag is written to `version-file` verbatim. When `false`
-      (default), the leading `v` is stripped.
+      (default), the leading `v` is stripped. Does not affect
+      `bump-package-json`, whose version must remain plain semver.
+    required: false
+    default: 'false'
+
+  bump-package-json:
+    description: >
+      When `true`, sets the `version` field of `package.json` in the repository
+      root to the release version, leaving the rest of the manifest untouched.
+      Use this instead of `version-file` for npm-shaped projects: `version-file`
+      overwrites its target with the bare version string, which would destroy a
+      JSON manifest. The leading `v` is always stripped, since npm requires
+      plain semver. The manifest is included in the commit when `commit` is
+      `true`.
     required: false
     default: 'false'
 
@@ -101,8 +114,8 @@ inputs:
   # Commit updates back
   commit:
     description: >
-      When `true`, commits changes to `version-file` and `changelog-file` back
-      to the repository.
+      When `true`, commits changes to `version-file`, `changelog-file` and, when
+      `bump-package-json` is enabled, `package.json` back to the repository.
     required: false
     default: 'false'
 
@@ -314,6 +327,15 @@ runs:
         args+=("$VERSION_FILE" "$TAG")
         "${GITHUB_ACTION_PATH}/scripts/bump-version.sh" "${args[@]}"
 
+    - name: Bump package.json
+      if: inputs.bump-package-json == 'true'
+      shell: bash
+      env:
+        TAG: ${{ steps.compute.outputs.tag }}
+      run: |
+        set -euo pipefail
+        "${GITHUB_ACTION_PATH}/scripts/bump-package-json.sh" package.json "$TAG"
+
     - name: Update changelog
       if: inputs.changelog-file != '' && inputs.update-changelog != 'false'
       uses: thomaseizinger/keep-a-changelog-new-release@v2
@@ -336,7 +358,9 @@ runs:
         commit_user_name: ${{ inputs.commit-user-name }}
         commit_user_email: ${{ inputs.commit-user-email }}
         file_pattern: >-
-          ${{ inputs.version-file }} ${{ inputs.changelog-file }}
+          ${{ inputs.version-file }}
+          ${{ inputs.bump-package-json == 'true' && 'package.json' || '' }}
+          ${{ inputs.changelog-file }}
         branch: ${{ inputs.commit-branch }}
 
     - name: Move devbuild tag

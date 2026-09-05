@@ -117,8 +117,9 @@ jobs:
 |===
 | Input | Default | Description
 
-| `version-file` | `''` | Path to a file to overwrite with the version. Leave empty to skip.
-| `keep-v-prefix` | `false` | When `true`, writes the tag verbatim. Otherwise strips the leading `v`.
+| `version-file` | `''` | Path to a file to overwrite with the version. Leave empty to skip. Not for JSON manifests: the file is replaced wholesale, so use `bump-package-json` for those.
+| `keep-v-prefix` | `false` | When `true`, writes the tag verbatim. Otherwise strips the leading `v`. Does not apply to `bump-package-json`.
+| `bump-package-json` | `false` | When `true`, sets the `version` field of the root `package.json`, leaving the rest of the manifest byte-for-byte intact. The leading `v` is always stripped, as npm requires plain semver.
 |===
 
 === Changelog
@@ -156,7 +157,7 @@ jobs:
 |===
 | Input | Default | Description
 
-| `commit` | `false` | Commit the modified `version-file` and `changelog-file` back to a branch.
+| `commit` | `false` | Commit the modified `version-file`, `changelog-file` and `package.json` back to a branch.
 | `commit-message` | `+chore: release {tag}+` | `+{tag}+` is substituted with the tag.
 | `commit-user-name` | `github-actions` | Name used for the auto-commit author.
 | `commit-user-email` | `+github-actions[bot]@users.noreply.github.com+` | Email used for the auto-commit author.

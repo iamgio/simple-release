@@ -2,13 +2,15 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-08
+
 ### Added
 
-- The `bump-package-json` option (default: `false`) sets the `version` field of the root `package.json` to the release version.
+-   The `bump-package-json` option (default: `false`) sets the `version` field of the root `package.json` to the release version.
 
 ### Fixed
 
-- `commit` no longer aborts on tag-triggered workflows. The `commit-branch` is now checked out before the release files are rewritten, instead of afterwards, when the pending changes made git refuse to leave the detached HEAD.
+-   `commit` no longer aborts on tag-triggered workflows. The `commit-branch` is now checked out before the release files are rewritten, instead of afterwards, when the pending changes made git refuse to leave the detached HEAD.
 
 ## [1.1.0] - 2026-08-09
 
@@ -34,7 +36,9 @@ The action is now ready for the GitHub Marketplace.
 
 Initial stable release. See the [README](README.adoc) for the full feature list.
 
-[Unreleased]: https://github.com/iamgio/simple-release/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/iamgio/simple-release/compare/v1.2.0...HEAD
+
+[1.2.0]: https://github.com/iamgio/simple-release/compare/v1.1.0...v1.2.0
 
 [1.1.0]: https://github.com/iamgio/simple-release/compare/v1.0.2...v1.1.0
 

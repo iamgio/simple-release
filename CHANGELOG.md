@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- The `bump-package-json` option (default: `false`) sets the `version` field of the root `package.json` to the release version.
+
 ## [1.1.0] - 2026-08-09
 
 ### Added

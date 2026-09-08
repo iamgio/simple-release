@@ -313,6 +313,15 @@ runs:
           echo "commit-message=$commit_message"
         } >> "$GITHUB_OUTPUT"
 
+    - name: Check out commit branch
+      if: inputs.commit == 'true' && inputs.commit-branch != ''
+      shell: bash
+      env:
+        BRANCH: ${{ inputs.commit-branch }}
+      run: |
+        set -euo pipefail
+        "${GITHUB_ACTION_PATH}/scripts/checkout-commit-branch.sh" "$BRANCH"
+
     - name: Bump version file
       if: inputs.version-file != ''
       shell: bash

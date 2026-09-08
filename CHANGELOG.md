@@ -6,6 +6,10 @@
 
 - The `bump-package-json` option (default: `false`) sets the `version` field of the root `package.json` to the release version.
 
+### Fixed
+
+- `commit` no longer aborts on tag-triggered workflows. The `commit-branch` is now checked out before the release files are rewritten, instead of afterwards, when the pending changes made git refuse to leave the detached HEAD.
+
 ## [1.1.0] - 2026-08-09
 
 ### Added

@@ -46,6 +46,23 @@ teardown() {
     [ "$output" = "v2.0.0" ]
 }
 
+@test "orders by version, not by history" {
+    # Tags don't always sit on the release train: here the highest lower
+    # version is tagged on the root commit, far from the current tag.
+    git tag v1.2.0 v1.0.0^{}
+    run "$SCRIPTS_DIR/previous-tag.sh" v2.0.0
+    [ "$status" -eq 0 ]
+    [ "$output" = "v1.2.0" ]
+}
+
+@test "compares version segments numerically" {
+    git commit --quiet --allow-empty -m "fourth"
+    git tag v10.0.0
+    run "$SCRIPTS_DIR/previous-tag.sh" v10.0.0
+    [ "$status" -eq 0 ]
+    [ "$output" = "v2.0.0" ]
+}
+
 @test "prints nothing when no previous version tag exists" {
     run "$SCRIPTS_DIR/previous-tag.sh" v1.0.0
     [ "$status" -eq 0 ]

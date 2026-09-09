@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   `replace-version-in-files` now resolves the previous release by version order across all `v*` tags, instead of the closest tag reachable in history, which misidentified the previous version when tags didn't sit on the release branch.
+
 ## [1.3.0] - 2026-09-09
 
 ### Added

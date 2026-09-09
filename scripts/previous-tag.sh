@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# Prints the closest v-prefixed version tag (e.g. `v1.2.3`) reachable from the
-# parent of <tag>, i.e. the release that came before it. Prints nothing when
-# there is none.
+# Prints the highest v-prefixed version tag (e.g. `v1.2.3`) whose version is
+# lower than <tag>'s, i.e. the release that came before it. Prints nothing
+# when there is none.
+#
+# Version order, not history, decides: tags in the wild don't always sit on
+# the release train (e.g. a tag pointing at an old commit that `git describe`
+# would misreport as the closest reachable one).
 #
 # Usage: previous-tag.sh <tag>
 
@@ -19,6 +23,12 @@ if ! git rev-parse --quiet --verify "${tag}^{commit}" >/dev/null; then
     exit 2
 fi
 
-# --match keeps everything but `v<digit>`-style tags out of the lookup, most
-# notably rolling tags such as a `latest` devbuild tag.
-git describe --tags --abbrev=0 --match 'v[0-9]*' "${tag}^" 2>/dev/null || true
+# The pattern keeps everything but `v<digit>`-style tags out of the lookup,
+# most notably rolling tags such as a `latest` devbuild tag. The list is
+# version-sorted descending, so the previous release is the entry right after
+# the current tag; nothing is printed when the current tag closes the list or
+# is not v-prefixed itself.
+git tag --list 'v[0-9]*' --sort=-v:refname | awk -v current="$tag" '
+    found { print; exit }
+    $0 == current { found = 1 }
+'

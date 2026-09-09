@@ -67,9 +67,8 @@ inputs:
       Newline- or comma-separated list of files (e.g. `README.md`) in which
       every occurrence of the previous release version is replaced with the
       new one, as literal text with no syntax awareness. The previous version
-      is the closest `v`-prefixed tag (e.g. `v1.2.3`) reachable from the
-      current tag's parent, so the full tag history must be available
-      (`fetch-depth: 0`). A leading
+      is the highest `v`-prefixed tag (e.g. `v1.2.3`) below the current one in
+      version order, so all tags must be available (`fetch-depth: 0`). A leading
       `v` is stripped from both versions before matching: bare occurrences
       (`1.2.3`) are replaced directly and `v`-prefixed ones (`v1.2.3`) keep
       their prefix. When no previous tag exists the step is skipped. The files

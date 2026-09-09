@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Prints the closest version-like tag reachable from the parent of <tag>,
-# i.e. the release that came before it. Prints nothing when there is none.
+# Prints the closest v-prefixed version tag (e.g. `v1.2.3`) reachable from the
+# parent of <tag>, i.e. the release that came before it. Prints nothing when
+# there is none.
 #
 # Usage: previous-tag.sh <tag>
 
@@ -18,6 +19,6 @@ if ! git rev-parse --quiet --verify "${tag}^{commit}" >/dev/null; then
     exit 2
 fi
 
-# --match keeps rolling tags such as a `latest` devbuild tag out of the
-# lookup; only tags starting with a digit, or `v` followed by one, qualify.
-git describe --tags --abbrev=0 --match 'v[0-9]*' --match '[0-9]*' "${tag}^" 2>/dev/null || true
+# --match keeps everything but `v<digit>`-style tags out of the lookup, most
+# notably rolling tags such as a `latest` devbuild tag.
+git describe --tags --abbrev=0 --match 'v[0-9]*' "${tag}^" 2>/dev/null || true

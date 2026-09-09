@@ -36,14 +36,14 @@ teardown() {
     [ "$output" = "v1.1.0" ]
 }
 
-@test "supports tags without the v prefix" {
+@test "skips tags without the leading v" {
     git commit --quiet --allow-empty -m "fourth"
-    git tag 3.0.0
+    git tag 2.5.0
     git commit --quiet --allow-empty -m "fifth"
-    git tag 3.1.0
-    run "$SCRIPTS_DIR/previous-tag.sh" 3.1.0
+    git tag v3.0.0
+    run "$SCRIPTS_DIR/previous-tag.sh" v3.0.0
     [ "$status" -eq 0 ]
-    [ "$output" = "3.0.0" ]
+    [ "$output" = "v2.0.0" ]
 }
 
 @test "prints nothing when no previous version tag exists" {

@@ -122,7 +122,7 @@ jobs:
 | `version-file` | `''` | Path to a file to overwrite with the version. Leave empty to skip. Not for JSON manifests: the file is replaced wholesale, so use `bump-package-json` for those.
 | `keep-v-prefix` | `false` | When `true`, writes the tag verbatim. Otherwise strips the leading `v`. Does not apply to `bump-package-json`.
 | `bump-package-json` | `false` | When `true`, sets the `version` field of the root `package.json`, leaving the rest of the manifest byte-for-byte intact. The leading `v` is always stripped, as npm requires plain semver.
-| `replace-version-in-files` | `''` | Newline- or comma-separated list of files (e.g. `README.md`) in which every occurrence of the previous release version is replaced with the new one, as literal text. The previous version is the closest version-like tag before the current one, so check out with `fetch-depth: 0`. Both `1.2.3` and `v1.2.3` occurrences are updated.
+| `replace-version-in-files` | `''` | Newline- or comma-separated list of files (e.g. `README.md`) in which every occurrence of the previous release version is replaced with the new one, as literal text. The previous version is the closest `v`-prefixed tag before the current one, so check out with `fetch-depth: 0`. Both `1.2.3` and `v1.2.3` occurrences are updated.
 |===
 
 === Changelog

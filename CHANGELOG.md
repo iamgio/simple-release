@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-09
+
 ### Added
 
 -   The `replace-version-in-files` option replaces every occurrence of the previous release version with the new one in the given files (e.g. installation snippets in `README.md`).
@@ -40,7 +42,9 @@ The action is now ready for the GitHub Marketplace.
 
 Initial stable release. See the [README](README.adoc) for the full feature list.
 
-[Unreleased]: https://github.com/iamgio/simple-release/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/iamgio/simple-release/compare/v1.3.0...HEAD
+
+[1.3.0]: https://github.com/iamgio/simple-release/compare/v1.2.0...v1.3.0
 
 [1.2.0]: https://github.com/iamgio/simple-release/compare/v1.1.0...v1.2.0
 

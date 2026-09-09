@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-09-09
+
 ### Fixed
 
 -   `replace-version-in-files` now resolves the previous release by version order across all `v*` tags, instead of the closest tag reachable in history, which misidentified the previous version when tags didn't sit on the release branch.
@@ -46,7 +48,9 @@ The action is now ready for the GitHub Marketplace.
 
 Initial stable release. See the [README](README.adoc) for the full feature list.
 
-[Unreleased]: https://github.com/iamgio/simple-release/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/iamgio/simple-release/compare/v1.3.1...HEAD
+
+[1.3.1]: https://github.com/iamgio/simple-release/compare/v1.3.0...v1.3.1
 
 [1.3.0]: https://github.com/iamgio/simple-release/compare/v1.2.0...v1.3.0
 

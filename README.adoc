@@ -11,6 +11,8 @@ Opinionated, customizable GitHub Action to publish releases out of pushed `v*` t
 * *Tagged release:* publishes the release with a composed body and artifacts.
 * *Version-file bump:* writes the tag into
   a file like `version.txt` readable by downstream tools, such as build scripts or `--version` flags.
+* *Version replacement:* swaps the previous release version for the new one
+  in any file, such as installation snippets in a `README.md`.
 * *Changelog update and extraction:* extracts the `[Unreleased]` section in a
   https://keepachangelog.com/[keep-a-changelog] file, turns it into a dated release
   section, and uses it to compose the release body.
@@ -120,6 +122,7 @@ jobs:
 | `version-file` | `''` | Path to a file to overwrite with the version. Leave empty to skip. Not for JSON manifests: the file is replaced wholesale, so use `bump-package-json` for those.
 | `keep-v-prefix` | `false` | When `true`, writes the tag verbatim. Otherwise strips the leading `v`. Does not apply to `bump-package-json`.
 | `bump-package-json` | `false` | When `true`, sets the `version` field of the root `package.json`, leaving the rest of the manifest byte-for-byte intact. The leading `v` is always stripped, as npm requires plain semver.
+| `replace-version-in-files` | `''` | Newline- or comma-separated list of files (e.g. `README.md`) in which every occurrence of the previous release version is replaced with the new one, as literal text. The previous version is the closest version-like tag before the current one, so check out with `fetch-depth: 0`. Both `1.2.3` and `v1.2.3` occurrences are updated.
 |===
 
 === Changelog
@@ -157,7 +160,7 @@ jobs:
 |===
 | Input | Default | Description
 
-| `commit` | `false` | Commit the modified `version-file`, `changelog-file` and `package.json` back to a branch.
+| `commit` | `false` | Commit the modified `version-file`, `changelog-file`, `package.json` and `replace-version-in-files` files back to a branch.
 | `commit-message` | `+chore: release {tag}+` | `+{tag}+` is substituted with the tag.
 | `commit-user-name` | `github-actions` | Name used for the auto-commit author.
 | `commit-user-email` | `+github-actions[bot]@users.noreply.github.com+` | Email used for the auto-commit author.

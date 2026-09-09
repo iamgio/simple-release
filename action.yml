@@ -62,6 +62,20 @@ inputs:
     required: false
     default: 'false'
 
+  replace-version-in-files:
+    description: >
+      Newline- or comma-separated list of files (e.g. `README.md`) in which
+      every occurrence of the previous release version is replaced with the
+      new one, as literal text with no syntax awareness. The previous version
+      is the closest version-like tag reachable from the current tag's parent,
+      so the full tag history must be available (`fetch-depth: 0`). A leading
+      `v` is stripped from both versions before matching: bare occurrences
+      (`1.2.3`) are replaced directly and `v`-prefixed ones (`v1.2.3`) keep
+      their prefix. When no previous tag exists the step is skipped. The files
+      are included in the auto-commit when `commit` is `true`.
+    required: false
+    default: ''
+
   # Changelog
   changelog-file:
     description: >
@@ -261,6 +275,7 @@ runs:
         INPUT_EXTRACT: ${{ inputs.extract-release-notes }}
         INPUT_CHANGELOG: ${{ inputs.changelog-file }}
         INPUT_COMMIT_MESSAGE: ${{ inputs.commit-message }}
+        INPUT_REPLACE_FILES: ${{ inputs.replace-version-in-files }}
         REF_NAME: ${{ github.ref_name }}
         REF_TYPE: ${{ github.ref_type }}
         DEFAULT_TOKEN: ${{ github.token }}
@@ -302,6 +317,10 @@ runs:
 
         commit_message="${INPUT_COMMIT_MESSAGE//\{tag\}/$tag}"
 
+        # Normalized to a space-separated list for the commit step's
+        # file_pattern; the replacement step re-parses the raw input instead.
+        replace_files="$(printf '%s' "$INPUT_REPLACE_FILES" | tr ',\n' '  ')"
+
         {
           echo "tag=$tag"
           echo "token=$token"
@@ -311,6 +330,7 @@ runs:
           echo "do-extract=$do_extract"
           echo "committer-token=$committer_token"
           echo "commit-message=$commit_message"
+          echo "replace-files=$replace_files"
         } >> "$GITHUB_OUTPUT"
 
     - name: Check out commit branch
@@ -345,6 +365,26 @@ runs:
         set -euo pipefail
         "${GITHUB_ACTION_PATH}/scripts/bump-package-json.sh" package.json "$TAG"
 
+    - name: Replace version in files
+      if: inputs.replace-version-in-files != ''
+      shell: bash
+      env:
+        FILES: ${{ inputs.replace-version-in-files }}
+        TAG: ${{ steps.compute.outputs.tag }}
+      run: |
+        set -euo pipefail
+        previous="$("${GITHUB_ACTION_PATH}/scripts/previous-tag.sh" "$TAG")"
+        if [ -z "$previous" ]; then
+          echo "::notice::No previous version tag found; skipping version replacement."
+          exit 0
+        fi
+        files=()
+        while IFS= read -r file; do
+          file="$(printf '%s' "$file" | xargs)"
+          if [ -n "$file" ]; then files+=("$file"); fi
+        done < <(printf '%s\n' "$FILES" | tr ',' '\n')
+        "${GITHUB_ACTION_PATH}/scripts/replace-version.sh" "$previous" "$TAG" "${files[@]}"
+
     - name: Update changelog
       if: inputs.changelog-file != '' && inputs.update-changelog != 'false'
       uses: thomaseizinger/keep-a-changelog-new-release@v2
@@ -369,6 +409,7 @@ runs:
         file_pattern: >-
           ${{ inputs.version-file }}
           ${{ inputs.bump-package-json == 'true' && 'package.json' || '' }}
+          ${{ steps.compute.outputs.replace-files }}
           ${{ inputs.changelog-file }}
         branch: ${{ inputs.commit-branch }}
 

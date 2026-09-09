@@ -5,6 +5,7 @@
 ### Added
 
 - The `bump-package-json` option (default: `false`) sets the `version` field of the root `package.json` to the release version.
+- The `replace-version-in-files` option replaces every occurrence of the previous release version with the new one in the given files (e.g. installation snippets in `README.md`).
 
 ### Fixed
 

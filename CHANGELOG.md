@@ -2,7 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+
+-   The `push-tag` option (default: `false`) tags the release commit and pushes the commit and the tag together, so you can start a release from a manually triggered workflow instead of pushing a tag. The tag then carries the bumped version and changelog, the leading `v` of the version is optional, and nothing is pushed when the tag already exists or the version is already released.
+
+### Changed
+
+-   `commit` now pushes the release commit with `committer-token` when it's set, like the devbuild and major-version tags. Without it, pushes keep using the credentials persisted by `actions/checkout`, as before.
+
 ### Fixed
+
+-   `committer-token` now takes effect when `actions/checkout` persisted different credentials. Previously, git kept authenticating with the checkout token, so devbuild and major-version tag pushes couldn't trigger other workflows or bypass branch protection with a PAT.
 
 -   `replace-version-in-files` now resolves the previous release by version order across all `v*` tags, instead of the closest tag reachable in history, which misidentified the previous version when tags didn't sit on the release branch.
 

@@ -20,6 +20,8 @@ Opinionated, customizable GitHub Action to publish releases out of pushed `v*` t
   the changelog.
 * *Devbuild prerelease:* moves a rolling tag to the
   current commit and publishes a prerelease with attached artifacts as a nightly build.
+* *Release from a button:* bumps the version, commits it, and tags that
+  commit in one atomic push, starting a release without pushing a tag by hand.
 * *Major-version tag alias:* extracts and pushes the
   major from the tag (`v2.3.4` -> `v2`), ideal for pinning versions in GitHub Actions (link:.github/workflows/release.yml[dogfooded in this very action]).
 
@@ -51,6 +53,49 @@ jobs:
             build/dist/*.zip
             build/dist/*.tar.gz
 ----
+
+NOTE: The pushed tag points at the commit before the version bump, so checking out the tag shows the previous version in `version.txt` and `CHANGELOG.md`. To have the tag carry the release version, start releases with `push-tag` instead (see below).
+
+=== Start a release from a button
+
+Run the workflow from the Actions tab, or with `gh workflow run release.yml -f version=1.2.3`.
+It bumps the version and changelog on `main`, commits them, and tags that commit as `v1.2.3`.
+The commit and the tag are pushed together: if the tag already exists, or the version is already released, nothing is pushed.
+
+[source,yaml]
+----
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release (e.g. 1.2.3)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: iamgio/simple-release@v1
+        with:
+          tag: ${{ inputs.version }}
+          committer-token: ${{ secrets.COMMITTER_TOKEN }}
+          version-file: version.txt
+          changelog-file: CHANGELOG.md
+          commit: 'true'
+          push-tag: 'true'
+          release: 'false'
+----
+
+The tag push then triggers your tag-based workflow (such as the one above, without `commit`), which builds and publishes the release.
+This requires `committer-token` to be a PAT: GitHub doesn't trigger workflows from pushes made with `github.token`.
 
 === Publish a rolling devbuild on every `main` push
 
@@ -110,7 +155,7 @@ jobs:
 
 | `tag` | `github.ref_name` | Tag for the release.
 | `token` | `github.token` | Token used to create the releases.
-| `committer-token` | Falls back to `token` | Token for pushing commits and moving tags. Use a PAT if needed.
+| `committer-token` | Checkout credentials | Token for pushing commits and tags, taking precedence over the credentials persisted by `actions/checkout`. When empty, pushes use the checkout credentials, or `token` if checkout persisted none. Use a PAT to push to protected branches, or to let the pushes trigger other workflows.
 |===
 
 === Version file
@@ -165,6 +210,7 @@ jobs:
 | `commit-user-name` | `github-actions` | Name used for the auto-commit author.
 | `commit-user-email` | `+github-actions[bot]@users.noreply.github.com+` | Email used for the auto-commit author.
 | `commit-branch` | `main` | Branch to push the commit to.
+| `push-tag` | `false` | When `true`, tags the release commit with `tag` and pushes the commit and the tag atomically. The leading `v` of `tag` is optional and always added, and the version must be semver. Requires `commit: 'true'`. Fails when there is nothing to commit or the tag already exists.
 |===
 
 === Devbuild
@@ -219,8 +265,10 @@ jobs:
 == Permissions
 
 The calling workflow needs `contents: write` for any step that pushes tags,
-commits, or creates releases. When commit-back or devbuild-tag pushing must
-target a protected branch, pass a PAT as `committer-token`.
+commits, or creates releases. Pushes authenticate with `committer-token` when
+set, and with the credentials persisted by `actions/checkout` otherwise. Pass a
+PAT as `committer-token` (or to `actions/checkout`) when pushing to a protected
+branch, or when the pushed commit or tag should trigger other workflows.
 
 == Versioning
 

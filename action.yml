@@ -26,10 +26,13 @@ inputs:
 
   committer-token:
     description: >
-      Token used for pushing commits and moving tags. Falls back to `token` if
-      empty. A PAT with `contents: write` on the target repo is usually needed
-      when the workflow itself was triggered by a bot or the default token
-      cannot push to protected branches.
+      Token used for pushing commits and tags, taking precedence over the
+      credentials persisted by `actions/checkout`. When empty, pushes use the
+      checkout credentials, or `token` if checkout persisted none. A PAT with
+      `contents: write` on the target repo is needed when the default token
+      cannot push to protected branches, or when the pushed commits and tags
+      should trigger other workflows, which pushes made with `github.token`
+      never do.
     required: false
     default: ''
 
@@ -155,6 +158,18 @@ inputs:
     required: false
     default: 'main'
 
+  push-tag:
+    description: >
+      When `true`, tags the release commit with `tag` and pushes both
+      atomically, so the tag always carries the bumped files and neither lands
+      without the other. Meant for starting a release from a non-tag ref, such
+      as a `workflow_dispatch` with a version input. The leading `v` of `tag`
+      is optional and always added, and the version must be semver. Requires
+      `commit: 'true'`, and fails when there is nothing to commit (e.g. the
+      version is already released) or when the tag already exists.
+    required: false
+    default: 'false'
+
   # Devbuild (rolling prerelease)
   devbuild-tag:
     description: >
@@ -276,8 +291,12 @@ runs:
         INPUT_CHANGELOG: ${{ inputs.changelog-file }}
         INPUT_COMMIT_MESSAGE: ${{ inputs.commit-message }}
         INPUT_REPLACE_FILES: ${{ inputs.replace-version-in-files }}
+        INPUT_COMMIT: ${{ inputs.commit }}
+        INPUT_PUSH_TAG: ${{ inputs.push-tag }}
         REF_NAME: ${{ github.ref_name }}
         REF_TYPE: ${{ github.ref_type }}
+        REPO: ${{ github.repository }}
+        SERVER_URL: ${{ github.server_url }}
         DEFAULT_TOKEN: ${{ github.token }}
       run: |
         set -euo pipefail
@@ -286,6 +305,13 @@ runs:
         tag="${INPUT_TAG:-$REF_NAME}"
         token="${INPUT_TOKEN:-$DEFAULT_TOKEN}"
         committer_token="${INPUT_COMMITTER_TOKEN:-$token}"
+
+        if [ "${INPUT_PUSH_TAG}" = "true" ]; then
+          if [ "${INPUT_COMMIT}" != "true" ]; then
+            echo "push-tag requires commit: 'true'" >&2; exit 2
+          fi
+          tag="$("${GITHUB_ACTION_PATH}/scripts/release-tag.sh" "$tag")"
+        fi
 
         if [ "${INPUT_KEEP_V}" = "true" ]; then
           version="$tag"
@@ -321,6 +347,11 @@ runs:
         # file_pattern; the replacement step re-parses the raw input instead.
         replace_files="$(printf '%s' "$INPUT_REPLACE_FILES" | tr ',\n' '  ')"
 
+        push_url="https://x-access-token:${committer_token}@${SERVER_URL#https://}/${REPO}.git"
+        # Only an explicit committer-token overrides the checkout credentials.
+        push_override_server_url=""
+        if [ -n "${INPUT_COMMITTER_TOKEN}" ]; then push_override_server_url="$SERVER_URL"; fi
+
         {
           echo "tag=$tag"
           echo "token=$token"
@@ -328,9 +359,10 @@ runs:
           echo "is-tag=$is_tag"
           echo "do-release=$do_release"
           echo "do-extract=$do_extract"
-          echo "committer-token=$committer_token"
           echo "commit-message=$commit_message"
           echo "replace-files=$replace_files"
+          echo "push-url=$push_url"
+          echo "push-override-server-url=$push_override_server_url"
         } >> "$GITHUB_OUTPUT"
 
     - name: Check out commit branch
@@ -399,7 +431,9 @@ runs:
       with:
         changelog_file: ${{ inputs.changelog-file }}
 
+    # Pushing is left to the next step, which authenticates with committer-token.
     - name: Commit release updates
+      id: commit
       if: inputs.commit == 'true'
       uses: stefanzweifel/git-auto-commit-action@v7
       with:
@@ -412,15 +446,39 @@ runs:
           ${{ steps.compute.outputs.replace-files }}
           ${{ inputs.changelog-file }}
         branch: ${{ inputs.commit-branch }}
+        tag_name: ${{ inputs.push-tag == 'true' && steps.compute.outputs.tag || '' }}
+        skip_push: true
+
+    - name: Push release updates
+      if: inputs.commit == 'true'
+      shell: bash
+      env:
+        CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
+        PUSH_TAG: ${{ inputs.push-tag }}
+        BRANCH: ${{ inputs.commit-branch }}
+        TAG: ${{ steps.compute.outputs.tag }}
+        OVERRIDE_SERVER_URL: ${{ steps.compute.outputs.push-override-server-url }}
+        PUSH_URL: ${{ steps.compute.outputs.push-url }}
+      run: |
+        set -euo pipefail
+        if [ "$CHANGES_DETECTED" != "true" ]; then
+          if [ "$PUSH_TAG" = "true" ]; then
+            echo "::error::Nothing to commit for $TAG: the release files already carry this version."
+            exit 1
+          fi
+          exit 0
+        fi
+        refspecs=("HEAD${BRANCH:+:refs/heads/$BRANCH}")
+        if [ "$PUSH_TAG" = "true" ]; then refspecs+=("refs/tags/$TAG"); fi
+        "${GITHUB_ACTION_PATH}/scripts/push.sh" "$OVERRIDE_SERVER_URL" "$PUSH_URL" "${refspecs[@]}"
 
     - name: Move devbuild tag
       if: inputs.devbuild-tag != ''
       shell: bash
       env:
         DEVBUILD_TAG: ${{ inputs.devbuild-tag }}
-        REPO: ${{ github.repository }}
-        SERVER_URL: ${{ github.server_url }}
-        TOKEN: ${{ steps.compute.outputs.committer-token }}
+        OVERRIDE_SERVER_URL: ${{ steps.compute.outputs.push-override-server-url }}
+        PUSH_URL: ${{ steps.compute.outputs.push-url }}
         COMMIT_USER_NAME: ${{ inputs.commit-user-name }}
         COMMIT_USER_EMAIL: ${{ inputs.commit-user-email }}
       run: |
@@ -429,8 +487,7 @@ runs:
         git config user.email "$COMMIT_USER_EMAIL"
         git tag -d "$DEVBUILD_TAG" || true
         git tag -f "$DEVBUILD_TAG"
-        push_url="${SERVER_URL#https://}"
-        git push "https://x-access-token:${TOKEN}@${push_url}/${REPO}.git" "+refs/tags/${DEVBUILD_TAG}"
+        "${GITHUB_ACTION_PATH}/scripts/push.sh" "$OVERRIDE_SERVER_URL" "$PUSH_URL" "+refs/tags/${DEVBUILD_TAG}"
 
     - name: Create devbuild release
       id: devbuild-release
@@ -521,9 +578,8 @@ runs:
       shell: bash
       env:
         TAG: ${{ steps.compute.outputs.tag }}
-        REPO: ${{ github.repository }}
-        SERVER_URL: ${{ github.server_url }}
-        TOKEN: ${{ steps.compute.outputs.committer-token }}
+        OVERRIDE_SERVER_URL: ${{ steps.compute.outputs.push-override-server-url }}
+        PUSH_URL: ${{ steps.compute.outputs.push-url }}
         COMMIT_USER_NAME: ${{ inputs.commit-user-name }}
         COMMIT_USER_EMAIL: ${{ inputs.commit-user-email }}
       run: |
@@ -532,5 +588,4 @@ runs:
         git config user.name "$COMMIT_USER_NAME"
         git config user.email "$COMMIT_USER_EMAIL"
         git tag -f "$major"
-        push_url="${SERVER_URL#https://}"
-        git push "https://x-access-token:${TOKEN}@${push_url}/${REPO}.git" "+refs/tags/${major}"
+        "${GITHUB_ACTION_PATH}/scripts/push.sh" "$OVERRIDE_SERVER_URL" "$PUSH_URL" "+refs/tags/${major}"

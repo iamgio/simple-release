@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-10
+
 ### Added
 
 -   The `push-tag` option (default: `false`) tags the release commit and pushes the commit and the tag together, so you can start a release from a manually triggered workflow instead of pushing a tag. The tag then carries the bumped version and changelog, the leading `v` of the version is optional, and nothing is pushed when the tag already exists or the version is already released.
@@ -60,7 +62,9 @@ The action is now ready for the GitHub Marketplace.
 
 Initial stable release. See the [README](README.adoc) for the full feature list.
 
-[Unreleased]: https://github.com/iamgio/simple-release/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/iamgio/simple-release/compare/v1.4.0...HEAD
+
+[1.4.0]: https://github.com/iamgio/simple-release/compare/v1.3.1...v1.4.0
 
 [1.3.1]: https://github.com/iamgio/simple-release/compare/v1.3.0...v1.3.1
 

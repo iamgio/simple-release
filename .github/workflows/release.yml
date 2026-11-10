@@ -1,11 +1,15 @@
 # Releases simple-release itself by dogfooding the action.
+# Started manually, e.g. `gh workflow run release.yml -f version=1.4.0`: bumps the
+# changelog, tags the bump commit, publishes the release and moves the major-version tag.
 
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release (e.g. 1.4.0)
+        required: true
 
 permissions:
   contents: write
@@ -16,13 +20,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Cut release and update major-version tag
         uses: ./
         with:
-          release: 'true'
-          major-tag: 'true'
+          tag: ${{ inputs.version }}
           changelog-file: CHANGELOG.md
           insert-changelog-spacers: 'true'
           commit: 'true'
+          push-tag: 'true'
+          release: 'true'
+          major-tag: 'true'
